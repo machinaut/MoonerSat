@@ -4,6 +4,7 @@
 #define STM32_SAT_DEFINES_H_
 
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/spi.h>
 
 /* Terrible hacks, preprocessor substitutions for gpio set/clear chip select */
 // Dont use radio 1
@@ -21,5 +22,7 @@
 #define RF0_RXANT_OFF   gpio_clear(GPIOB, GPIO1);
 #define RF0_TXANT_ON    gpio_set(GPIOB, GPIO0);
 #define RF0_TXANT_OFF   gpio_clear(GPIOB, GPIO0);
+
+#define ReadWriteSpi(x) spi_xfer(SPI2, x)
 
 #endif // !defined STM32_SAT_DEFINES_H_

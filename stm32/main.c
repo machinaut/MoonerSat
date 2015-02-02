@@ -26,6 +26,7 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include "systick.h"
+#include "RFM22B.h"
 
 static void clock_setup(void)
 {
@@ -74,13 +75,18 @@ int main(void)
     gpio_setup();
     spi_setup();
     systick_setup();
+    //init radios
+    InitRfm22(RADIO0);
+    msleep(1000);
+    ConfigReadBackTest(RADIO0);
 
     while (1) {
         counter++;
-        gpio_clear(GPIOB, GPIO12);
-        spi_xfer(SPI2, counter);
-        gpio_set(GPIOB, GPIO12);
-        msleep(1);
+        //gpio_clear(GPIOB, GPIO12);
+        //spi_xfer(SPI2, counter);
+        //gpio_set(GPIOB, GPIO12);
+    	SentTestPacket( RADIO0 );
+        msleep(1000);
     }
 
     return 0;
