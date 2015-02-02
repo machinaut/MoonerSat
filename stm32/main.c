@@ -25,18 +25,23 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
+#include "cdcacm.h"
 #include "systick.h"
 #include "RFM22B.h"
 
 static void clock_setup(void)
 {
-    rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
+    //rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
+
+    rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_120MHZ]);
 
     /* Enable clocks on all the peripherals we are going to use. */
     rcc_periph_clock_enable(RCC_SPI2);
     rcc_periph_clock_enable(RCC_GPIOA);
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
+    rcc_periph_clock_enable(RCC_OTGFS);
+
 }
 
 static void spi_setup(void)
@@ -67,14 +72,33 @@ static void gpio_setup(void)
     gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_MODE_OUTPUT, GPIO3);
 }
 
+static usbd_device *usb_setup(void)
+{
+        usbd_device *usbd_dev;
+
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
+			GPIO9 | GPIO11 | GPIO12);
+	gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
+
+	usbd_dev = usbd_init(&otgfs_usb_driver, &dev, &config,
+			usb_strings, 3,
+			usbd_control_buffer, sizeof(usbd_control_buffer));
+
+	usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
+
+        return usbd_dev;
+}
+
 int main(void)
 {
     uint8_t counter = 0;
+    usbd_device *usbd_dev;
 
     clock_setup();
     gpio_setup();
     spi_setup();
     systick_setup();
+    usbd_dev = usb_setup();
     //init radios
     InitRfm22(RADIO0);
     msleep(1000);
@@ -82,9 +106,7 @@ int main(void)
 
     while (1) {
         counter++;
-        //gpio_clear(GPIOB, GPIO12);
-        //spi_xfer(SPI2, counter);
-        //gpio_set(GPIOB, GPIO12);
+	usbd_poll(usbd_dev);
     	SentTestPacket( RADIO0 );
         msleep(1000);
     }
